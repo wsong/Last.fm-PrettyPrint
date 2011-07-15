@@ -9,7 +9,7 @@ from time import sleep
 import cgi
 import sys
 
-apiKey = 'fdb0f04d3322844d8c47c45b14a26375'
+apiKey = ''
 RETRIES = 5
 
 print "Content-type: text/html; charset=utf-8\n\n"
