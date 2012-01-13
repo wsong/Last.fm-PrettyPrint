@@ -9,7 +9,13 @@ from time import sleep
 import cgi
 import sys
 
-apiKey = 'fdb0f04d3322844d8c47c45b14a26375'
+class ArtistAndPlaycount:
+    def __init__(self, rank, name, playcount):
+        self.rank = rank
+        self.name = name
+        self.playcount = playcount
+
+apiKey = ''
 RETRIES = 5
 
 print "Content-type: text/html; charset=utf-8\n\n"
@@ -35,12 +41,12 @@ here for the source code.</a>
 """
 
 def get_xml(u):
-    for i in xrange(RETRIES):
+    for i in range(RETRIES):
         try:
-            sleep(1)
             return minidom.parse(urlopen(u))
         except IOError:
             print "Connection to last.fm failed."
+        sleep(1)
 
 def getWeeklyTopArtists(user, api_key):
     url = 'http://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=%s&api_key=%s&period=7day' % (user, api_key)
@@ -48,30 +54,26 @@ def getWeeklyTopArtists(user, api_key):
 
 def getWeeklyArtistList(xmlArtistObj):
     results = []
-    for i in range(0, len(xmlArtistObj)):
-        rank = xmlArtistObj[i].getAttribute("rank")
-        artistName =  xmlArtistObj[i].getElementsByTagName("name")[0].firstChild.nodeValue
-        playcount = xmlArtistObj[i].getElementsByTagName("playcount")[0].firstChild.nodeValue
-        results.append((rank, artistName, playcount))
+    for node in xmlArtistObj:
+        rank = node.getAttribute("rank")
+        artistName =  node.getElementsByTagName("name")[0].firstChild.nodeValue
+        playcount = node.getElementsByTagName("playcount")[0].firstChild.nodeValue
+        results.append(ArtistAndPlaycount(rank, artistName, playcount))
     return results
 
-if(username != None):
+
+if username:
     artists = getWeeklyArtistList(getWeeklyTopArtists(username, apiKey))
     counter = 1
-    for i in range(0, len(artists)):
-        if(i != 0 and artists[i - 1][2] == artists[i][2]):
-            row = "%s\t%s\t%s" % (counter, artists[i][1], artists[i][2])
-            unicodeRow = unicode(row)
-            print unicodeRow.encode('ascii', 'xmlcharrefreplace')
-            print "<br/>"
-        else:
-            row = "%s\t%s\t%s" % (i+1, artists[i][1], artists[i][2])
-            unicodeRow = unicode(row)
-            print unicodeRow.encode('ascii', 'xmlcharrefreplace')
-            print "<br/>"
+    # This particular section emulates last.fm's habit of making artists that
+    # have the same number of playcounts have the same numerical rank
+    for i in range(len(artists)):
+        if artists[i - 1].playcount != artists[i].playcount:
             counter = i + 1
-else:
-    print ""
+        row = "%s\t%s\t%s" % (counter, artists[i].name, artists[i].playcount)
+        unicodeRow = unicode(row)
+        print unicodeRow.encode('ascii', 'xmlcharrefreplace')
+        print "<br/>"
 
 print "</body>"
 print "</html>"
